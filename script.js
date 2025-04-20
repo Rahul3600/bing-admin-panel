@@ -1,13 +1,13 @@
-// Your Firebase configuration - REPLACE THIS with your actual Firebase config
 const firebaseConfig = {
-    apiKey: "YOUR-API-KEY",
-    authDomain: "YOUR-PROJECT-ID.firebaseapp.com",
-    databaseURL: "https://YOUR-PROJECT-ID.firebaseio.com",
-    projectId: "YOUR-PROJECT-ID",
-    storageBucket: "YOUR-PROJECT-ID.appspot.com",
-    messagingSenderId: "YOUR-MESSAGING-ID",
-    appId: "YOUR-APP-ID"
+  apiKey: "AIzaSyDSoHJ4M8-vyDm8-msZG2cxthfK6zRzOV4",
+  authDomain: "bingsearchmanager.firebaseapp.com",
+  databaseURL: "https://bingsearchmanager-default-rtdb.asia-southeast1.firebasedatabase.app",
+  projectId: "bingsearchmanager",
+  storageBucket: "bingsearchmanager.firebasestorage.app",
+  messagingSenderId: "688318974542",
+  appId: "1:688318974542:web:81caafcee21c2d729b511f"
 };
+
 
 // Initialize Firebase
 firebase.initializeApp(firebaseConfig);
