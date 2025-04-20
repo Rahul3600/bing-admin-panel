@@ -517,4 +517,551 @@ function updateDashboardStats() {
     today.setHours(0, 0, 0, 0);
     
     let totalSearches = 0;
-    Object.values(clients).
+    Object.values(clients)
+      // Count total searches today
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    
+    let totalSearches = 0;
+    Object.values(clients).forEach(client => {
+        const status = client.status || {};
+        totalSearches += status.searchCount || 0;
+    });
+    
+    document.getElementById('total-searches-count').textContent = totalSearches;
+    
+    // Count search terms
+    document.getElementById('search-terms-count').textContent = searchTerms.length;
+    
+    // Calculate uptime
+    const startTime = localStorage.getItem('systemStartTime');
+    if (!startTime) {
+        localStorage.setItem('systemStartTime', Date.now().toString());
+    }
+    
+    const uptimeMs = Date.now() - parseInt(startTime || Date.now());
+    const uptimeHours = Math.floor(uptimeMs / (1000 * 60 * 60));
+    document.getElementById('uptime-value').textContent = `${uptimeHours}h`;
+    
+    // Update charts
+    updateCharts();
+}
+
+// Initialize charts
+function initializeCharts() {
+    // Activity chart
+    const activityCtx = document.getElementById('activity-chart');
+    if (activityCtx) {
+        window.activityChart = new Chart(activityCtx, {
+            type: 'line',
+            data: {
+                labels: Array(24).fill(0).map((_, i) => `${i}:00`),
+                datasets: [{
+                    label: 'Searches',
+                    data: Array(24).fill(0),
+                    borderColor: '#4361ee',
+                    backgroundColor: 'rgba(67, 97, 238, 0.1)',
+                    tension: 0.4,
+                    fill: true
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: {
+                        display: false
+                    }
+                },
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        grid: {
+                            color: 'rgba(255, 255, 255, 0.05)'
+                        },
+                        ticks: {
+                            color: 'rgba(255, 255, 255, 0.7)'
+                        }
+                    },
+                    x: {
+                        grid: {
+                            color: 'rgba(255, 255, 255, 0.05)'
+                        },
+                        ticks: {
+                            color: 'rgba(255, 255, 255, 0.7)',
+                            maxRotation: 0,
+                            autoSkip: true,
+                            maxTicksLimit: 12
+                        }
+                    }
+                }
+            }
+        });
+    }
+    
+    // Device chart
+    const deviceCtx = document.getElementById('device-chart');
+    if (deviceCtx) {
+        window.deviceChart = new Chart(deviceCtx, {
+            type: 'doughnut',
+            data: {
+                labels: ['Desktop', 'Mobile'],
+                datasets: [{
+                    data: [0, 0],
+                    backgroundColor: ['#4361ee', '#f72585'],
+                    borderWidth: 0
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: {
+                        position: 'bottom',
+                        labels: {
+                            color: 'rgba(255, 255, 255, 0.7)'
+                        }
+                    }
+                }
+            }
+        });
+    }
+}
+
+// Update charts with current data
+function updateCharts() {
+    // Update activity chart
+    if (window.activityChart) {
+        // Generate hourly data
+        const hourlyData = Array(24).fill(0);
+        
+        activityLog.forEach(activity => {
+            if (activity.type === 'search_completed') {
+                const hour = new Date(activity.timestamp).getHours();
+                hourlyData[hour]++;
+            }
+        });
+        
+        window.activityChart.data.datasets[0].data = hourlyData;
+        window.activityChart.update();
+    }
+    
+    // Update device chart
+    if (window.deviceChart) {
+        let desktopCount = 0;
+        let mobileCount = 0;
+        
+        Object.values(clients).forEach(client => {
+            const status = client.status || {};
+            if (status.mode === 'Desktop') {
+                desktopCount++;
+            } else if (status.mode === 'Mobile') {
+                mobileCount++;
+            }
+        });
+        
+        window.deviceChart.data.datasets[0].data = [desktopCount, mobileCount];
+        window.deviceChart.update();
+    }
+}
+
+// Client Actions
+function pauseAllClients() {
+    if (!confirm('Are you sure you want to pause all clients?')) return;
+    
+    Object.keys(clients).forEach(clientId => {
+        const commands = clients[clientId].commands || {};
+        if (!commands.disabled) {
+            pauseClient(clientId);
+        }
+    });
+    
+    logActivity('admin_action', 'All Clients Paused', 'Administrator paused all active clients');
+}
+
+function resumeAllClients() {
+    if (!confirm('Are you sure you want to resume all clients?')) return;
+    
+    Object.keys(clients).forEach(clientId => {
+        const commands = clients[clientId].commands || {};
+        if (!commands.disabled) {
+            resumeClient(clientId);
+        }
+    });
+    
+    logActivity('admin_action', 'All Clients Resumed', 'Administrator resumed all paused clients');
+}
+
+function resetAllClients() {
+    if (!confirm('Are you sure you want to reset all clients? This will restart their search sessions.')) return;
+    
+    Object.keys(clients).forEach(clientId => {
+        const commands = clients[clientId].commands || {};
+        if (!commands.disabled) {
+            resetClient(clientId);
+        }
+    });
+    
+    logActivity('admin_action', 'All Clients Reset', 'Administrator reset all clients');
+}
+
+function updateGlobalMaxSearches() {
+    const maxSearches = parseInt(document.getElementById('global-max-searches').value);
+    if (isNaN(maxSearches) || maxSearches < 1) {
+        alert('Please enter a valid number for max searches');
+        return;
+    }
+    
+    Object.keys(clients).forEach(clientId => {
+        database.ref(`clients/${clientId}/commands/maxSearches`).set(maxSearches);
+    });
+    
+    logActivity('admin_action', 'Global Max Searches Updated', `Administrator set max searches to ${maxSearches} for all clients`);
+}
+
+function pauseClient(clientId) {
+    database.ref(`clients/${clientId}/commands/pause`).set(true)
+        .then(() => {
+            logActivity('client_paused', 'Client Paused', `Client ${clientId} was paused`);
+        })
+        .catch(error => {
+            console.error(`Error pausing client ${clientId}:`, error);
+        });
+}
+
+function resumeClient(clientId) {
+    database.ref(`clients/${clientId}/commands/resume`).set(true)
+        .then(() => {
+            logActivity('client_resumed', 'Client Resumed', `Client ${clientId} was resumed`);
+        })
+        .catch(error => {
+            console.error(`Error resuming client ${clientId}:`, error);
+        });
+}
+
+function resetClient(clientId) {
+    database.ref(`clients/${clientId}/commands/reset`).set(true)
+        .then(() => {
+            logActivity('client_reset', 'Client Reset', `Client ${clientId} was reset`);
+        })
+        .catch(error => {
+            console.error(`Error resetting client ${clientId}:`, error);
+        });
+}
+
+function toggleClientDisabled(clientId) {
+    const client = clients[clientId] || {};
+    const commands = client.commands || {};
+    const isCurrentlyDisabled = commands.disabled || false;
+    
+    database.ref(`clients/${clientId}/commands/disabled`).set(!isCurrentlyDisabled)
+        .then(() => {
+            logActivity(
+                isCurrentlyDisabled ? 'client_enabled' : 'client_disabled',
+                isCurrentlyDisabled ? 'Client Enabled' : 'Client Disabled',
+                `Client ${clientId} was ${isCurrentlyDisabled ? 'enabled' : 'disabled'}`
+            );
+        })
+        .catch(error => {
+            console.error(`Error toggling disabled state for client ${clientId}:`, error);
+        });
+}
+
+// Search Term Actions
+function addSearchTerm() {
+    const termInput = document.getElementById('new-term');
+    const categorySelect = document.getElementById('term-category');
+    
+    const term = termInput.value.trim();
+    const category = categorySelect.value;
+    
+    if (!term) {
+        alert('Please enter a search term');
+        return;
+    }
+    
+    // Check if term already exists
+    const termExists = searchTerms.some(existingTerm => {
+        if (typeof existingTerm === 'string') {
+            return existingTerm.toLowerCase() === term.toLowerCase();
+        } else if (existingTerm && existingTerm.text) {
+            return existingTerm.text.toLowerCase() === term.toLowerCase();
+        }
+        return false;
+    });
+    
+    if (termExists) {
+        alert('This search term already exists');
+        return;
+    }
+    
+    // Add term with metadata
+    const newTerm = {
+        text: term,
+        category: category,
+        usageCount: 0,
+        addedAt: Date.now()
+    };
+    
+    const updatedTerms = [...searchTerms, newTerm];
+    
+    database.ref('searchTerms').set(updatedTerms)
+        .then(() => {
+            termInput.value = '';
+            logActivity('term_added', 'Search Term Added', `New search term "${term}" was added`);
+            loadData(); // Refresh data
+        })
+        .catch(error => {
+            console.error('Error adding search term:', error);
+            alert('Failed to add search term. Please try again.');
+        });
+}
+
+function addBulkSearchTerms() {
+    const termsTextarea = document.getElementById('bulk-terms');
+    const categorySelect = document.getElementById('bulk-category');
+    
+    const termsText = termsTextarea.value.trim();
+    const category = categorySelect.value;
+    
+    if (!termsText) {
+        alert('Please enter search terms');
+        return;
+    }
+    
+    const terms = termsText.split('\n')
+        .map(term => term.trim())
+        .filter(term => term.length > 0);
+    
+    if (terms.length === 0) {
+        alert('No valid search terms found');
+        return;
+    }
+    
+    // Filter out duplicates
+    const existingTermTexts = searchTerms.map(term => {
+        return typeof term === 'string' ? term.toLowerCase() : (term.text ? term.text.toLowerCase() : '');
+    });
+    
+    const newTerms = terms.filter(term => !existingTermTexts.includes(term.toLowerCase()))
+        .map(term => ({
+            text: term,
+            category: category,
+            usageCount: 0,
+            addedAt: Date.now()
+        }));
+    
+    if (newTerms.length === 0) {
+        alert('All terms already exist in the database');
+        return;
+    }
+    
+    const updatedTerms = [...searchTerms, ...newTerms];
+    
+    database.ref('searchTerms').set(updatedTerms)
+        .then(() => {
+            termsTextarea.value = '';
+            logActivity('terms_added', 'Bulk Search Terms Added', `${newTerms.length} new search terms were added`);
+            loadData(); // Refresh data
+        })
+        .catch(error => {
+            console.error('Error adding bulk search terms:', error);
+            alert('Failed to add search terms. Please try again.');
+        });
+}
+
+function editSearchTerm(index) {
+    const term = searchTerms[index];
+    if (!term) return;
+    
+    const termText = typeof term === 'string' ? term : term.text;
+    const category = typeof term === 'string' ? 'General' : (term.category || 'General');
+    
+    const newText = prompt('Edit search term:', termText);
+    if (newText === null) return; // User cancelled
+    
+    if (newText.trim() === '') {
+        alert('Search term cannot be empty');
+        return;
+    }
+    
+    // Update term
+    const updatedTerms = [...searchTerms];
+    
+    if (typeof term === 'string') {
+        updatedTerms[index] = {
+            text: newText.trim(),
+            category: category,
+            usageCount: 0,
+            addedAt: Date.now(),
+            editedAt: Date.now()
+        };
+    } else {
+        updatedTerms[index] = {
+            ...term,
+            text: newText.trim(),
+            editedAt: Date.now()
+        };
+    }
+    
+    database.ref('searchTerms').set(updatedTerms)
+        .then(() => {
+            logActivity('term_edited', 'Search Term Edited', `Search term was edited from "${termText}" to "${newText.trim()}"`);
+            loadData(); // Refresh data
+        })
+        .catch(error => {
+            console.error('Error editing search term:', error);
+            alert('Failed to edit search term. Please try again.');
+        });
+}
+
+function deleteSearchTerm(index) {
+    const term = searchTerms[index];
+    if (!term) return;
+    
+    const termText = typeof term === 'string' ? term : term.text;
+    
+    if (!confirm(`Are you sure you want to delete the search term "${termText}"?`)) {
+        return;
+    }
+    
+    const updatedTerms = searchTerms.filter((_, i) => i !== index);
+    
+    database.ref('searchTerms').set(updatedTerms)
+        .then(() => {
+            logActivity('term_deleted', 'Search Term Deleted', `Search term "${termText}" was deleted`);
+            loadData(); // Refresh data
+        })
+        .catch(error => {
+            console.error('Error deleting search term:', error);
+            alert('Failed to delete search term. Please try again.');
+        });
+}
+
+function deleteSelectedTerms() {
+    const selectedIndexes = [];
+    document.querySelectorAll('.term-checkbox:checked').forEach(checkbox => {
+        selectedIndexes.push(parseInt(checkbox.getAttribute('data-index')));
+    });
+    
+    if (selectedIndexes.length === 0) {
+        alert('No search terms selected');
+        return;
+    }
+    
+    if (!confirm(`Are you sure you want to delete ${selectedIndexes.length} search terms?`)) {
+        return;
+    }
+    
+    const updatedTerms = searchTerms.filter((_, index) => !selectedIndexes.includes(index));
+    
+    database.ref('searchTerms').set(updatedTerms)
+        .then(() => {
+            logActivity('terms_deleted', 'Search Terms Deleted', `${selectedIndexes.length} search terms were deleted`);
+            loadData(); // Refresh data
+        })
+        .catch(error => {
+            console.error('Error deleting search terms:', error);
+            alert('Failed to delete search terms. Please try again.');
+        });
+}
+
+function importSearchTerms() {
+    const input = document.createElement('input');
+    input.type = 'file';
+    input.accept = '.json,.txt';
+    
+    input.onchange = e => {
+        const file = e.target.files[0];
+        if (!file) return;
+        
+        const reader = new FileReader();
+        reader.onload = event => {
+            try {
+                let importedTerms = [];
+                
+                if (file.name.endsWith('.json')) {
+                    // Parse JSON file
+                    importedTerms = JSON.parse(event.target.result);
+                } else {
+                    // Parse text file (one term per line)
+                    importedTerms = event.target.result.split('\n')
+                        .map(line => line.trim())
+                        .filter(line => line.length > 0)
+                        .map(term => ({
+                            text: term,
+                            category: 'Imported',
+                            usageCount: 0,
+                            addedAt: Date.now()
+                        }));
+                }
+                
+                if (!Array.isArray(importedTerms) || importedTerms.length === 0) {
+                    alert('No valid search terms found in the file');
+                    return;
+                }
+                
+                // Filter out duplicates
+                const existingTermTexts = searchTerms.map(term => {
+                    return typeof term === 'string' ? term.toLowerCase() : (term.text ? term.text.toLowerCase() : '');
+                });
+                
+                const newTerms = importedTerms.filter(term => {
+                    const termText = typeof term === 'string' ? term.toLowerCase() : (term.text ? term.text.toLowerCase() : '');
+                    return termText && !existingTermTexts.includes(termText);
+                });
+                
+                if (newTerms.length === 0) {
+                    alert('All terms in the file already exist in the database');
+                    return;
+                }
+                
+                // Normalize terms to objects if they're strings
+                const normalizedNewTerms = newTerms.map(term => {
+                    if (typeof term === 'string') {
+                        return {
+                            text: term,
+                            category: 'Imported',
+                            usageCount: 0,
+                            addedAt: Date.now()
+                        };
+                    }
+                    return {
+                        ...term,
+                        addedAt: Date.now()
+                    };
+                });
+                
+                const updatedTerms = [...searchTerms, ...normalizedNewTerms];
+                
+                database.ref('searchTerms').set(updatedTerms)
+                    .then(() => {
+                        logActivity('terms_imported', 'Search Terms Imported', `${normalizedNewTerms.length} search terms were imported`);
+                        loadData(); // Refresh data
+                        alert(`Successfully imported ${normalizedNewTerms.length} search terms`);
+                    })
+                    .catch(error => {
+                        console.error('Error importing search terms:', error);
+                        alert('Failed to import search terms. Please try again.');
+                    });
+                
+            } catch (error) {
+                console.error('Error parsing imported file:', error);
+                alert('Failed to parse the file. Please make sure it\'s a valid JSON or text file.');
+            }
+        };
+        
+        if (file.name.endsWith('.json')) {
+            reader.readAsText(file);
+        } else {
+            reader.readAsText(file);
+        }
+    };
+    
+    input.click();
+}
+
+function exportSearchTerms() {
+    if (!searchTerms || searchTerms.length === 0) {
+        alert('No search terms to export');
+        return;
