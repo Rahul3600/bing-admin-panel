@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Bing Search Admin</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <!-- Bootstrap CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        .card { margin-bottom: 20px; }
+        #login-section { max-width: 400px; margin: 50px auto; }
+    </style>
+</head>
+<body>
+    <div class="container mt-4">
+        <!-- Login Section -->
+        <div id="login-section">
+            <div class="card">
+                <div class="card-header bg-primary text-white">
+                    <h3 class="mb-0">Bing Search Admin Login</h3>
+                </div>
+                <div class="card-body">
+                    <div class="mb-3">
+                        <label for="password" class="form-label">Password</label>
+                        <input type="password" class="form-control" id="password">
+                    </div>
+                    <button id="login-btn" class="btn btn-primary">Login</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Admin Panel (Hidden until login) -->
+        <div id="admin-panel" style="display:none;">
+            <h1 class="mb-4">Bing Search Admin Panel</h1>
+            
+            <!-- Client Management -->
+            <div class="card">
+                <div class="card-header bg-primary text-white">
+                    <h3 class="mb-0">Active Clients</h3>
+                </div>
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="table table-striped">
+                            <thead>
+                                <tr>
+                                    <th>Client ID</th>
+                                    <th>Status</th>
+                                    <th>Searches</th>
+                                    <th>Last Active</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody id="clients-table">
+                                <tr><td colspan="5" class="text-center">Loading clients...</td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Search Terms Management -->
+            <div class="card">
+                <div class="card-header bg-primary text-white">
+                    <h3 class="mb-0">Search Terms</h3>
+                </div>
+                <div class="card-body">
+                    <div class="mb-3">
+                        <label for="search-terms" class="form-label">Enter search terms (one per line)</label>
+                        <textarea id="search-terms" class="form-control" rows="5"></textarea>
+                    </div>
+                    <button id="update-terms-btn" class="btn btn-primary">Update Terms</button>
+                </div>
+            </div>
+            
+            <!-- Global Controls -->
+            <div class="card">
+                <div class="card-header bg-primary text-white">
+                    <h3 class="mb-0">Global Controls</h3>
+                </div>
+                <div class="card-body">
+                    <button id="pause-all-btn" class="btn btn-warning me-2">Pause All Clients</button>
+                    <button id="resume-all-btn" class="btn btn-success me-2">Resume All Clients</button>
+                    <button id="reset-all-btn" class="btn btn-danger">Reset All Clients</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Firebase Scripts -->
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
+    
+    <!-- Our Script -->
+    <script src="script.js"></script>
+</body>
+</html>
