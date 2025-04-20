@@ -1059,7 +1059,7 @@ function importSearchTerms() {
     if (!searchTerms || searchTerms.length === 0) {
         alert('No search terms to export');
         return;
-    };
+    }
     
     // Create a normalized version of the terms (all as objects)
     const normalizedTerms = searchTerms.map(term => {
