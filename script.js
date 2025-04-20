@@ -14,7 +14,7 @@ firebase.initializeApp(firebaseConfig);
 const database = firebase.database();
 
 // Simple admin password - CHANGE THIS to your own password
-const ADMIN_PASSWORD = "your-secret-password";
+const ADMIN_PASSWORD = "Rahul000";
 
 // DOM Elements
 const loginSection = document.getElementById('login-section');
