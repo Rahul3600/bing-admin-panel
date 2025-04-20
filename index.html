@@ -1,96 +1,891 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-    <title>Bing Search Admin</title>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <!-- Bootstrap CSS -->
+    <title>Bing Search Command Center</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-    <style>
-        .card { margin-bottom: 20px; }
-        #login-section { max-width: 400px; margin: 50px auto; }
-    </style>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700&family=Orbitron:wght@400;500;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="styles.css">
 </head>
-<body>
-    <div class="container mt-4">
-        <!-- Login Section -->
-        <div id="login-section">
-            <div class="card">
-                <div class="card-header bg-primary text-white">
-                    <h3 class="mb-0">Bing Search Admin Login</h3>
-                </div>
-                <div class="card-body">
-                    <div class="mb-3">
-                        <label for="password" class="form-label">Password</label>
-                        <input type="password" class="form-control" id="password">
-                    </div>
-                    <button id="login-btn" class="btn btn-primary">Login</button>
-                </div>
+<body class="dark-theme">
+    <!-- Login Screen -->
+    <div id="login-container" class="container-fluid vh-100 d-flex align-items-center justify-content-center">
+        <div class="login-card">
+            <div class="login-header text-center mb-4">
+                <h1 class="display-4 fw-bold text-gradient">Command Center</h1>
+                <p class="text-muted">Advanced Bing Search Management</p>
             </div>
-        </div>
-
-        <!-- Admin Panel (Hidden until login) -->
-        <div id="admin-panel" style="display:none;">
-            <h1 class="mb-4">Bing Search Admin Panel</h1>
-            
-            <!-- Client Management -->
-            <div class="card">
-                <div class="card-header bg-primary text-white">
-                    <h3 class="mb-0">Active Clients</h3>
-                </div>
-                <div class="card-body">
-                    <div class="table-responsive">
-                        <table class="table table-striped">
-                            <thead>
-                                <tr>
-                                    <th>Client ID</th>
-                                    <th>Status</th>
-                                    <th>Searches</th>
-                                    <th>Last Active</th>
-                                    <th>Actions</th>
-                                </tr>
-                            </thead>
-                            <tbody id="clients-table">
-                                <tr><td colspan="5" class="text-center">Loading clients...</td></tr>
-                            </tbody>
-                        </table>
+            <div class="login-body">
+                <div class="mb-3">
+                    <label for="password" class="form-label">Admin Password</label>
+                    <div class="input-group">
+                        <input type="password" class="form-control" id="password" placeholder="Enter password">
+                        <button class="btn btn-outline-secondary" type="button" id="toggle-password">
+                            <i class="bi bi-eye"></i>
+                        </button>
                     </div>
                 </div>
-            </div>
-            
-            <!-- Search Terms Management -->
-            <div class="card">
-                <div class="card-header bg-primary text-white">
-                    <h3 class="mb-0">Search Terms</h3>
-                </div>
-                <div class="card-body">
-                    <div class="mb-3">
-                        <label for="search-terms" class="form-label">Enter search terms (one per line)</label>
-                        <textarea id="search-terms" class="form-control" rows="5"></textarea>
-                    </div>
-                    <button id="update-terms-btn" class="btn btn-primary">Update Terms</button>
-                </div>
-            </div>
-            
-            <!-- Global Controls -->
-            <div class="card">
-                <div class="card-header bg-primary text-white">
-                    <h3 class="mb-0">Global Controls</h3>
-                </div>
-                <div class="card-body">
-                    <button id="pause-all-btn" class="btn btn-warning me-2">Pause All Clients</button>
-                    <button id="resume-all-btn" class="btn btn-success me-2">Resume All Clients</button>
-                    <button id="reset-all-btn" class="btn btn-danger">Reset All Clients</button>
+                <div class="d-grid gap-2">
+                    <button id="login-btn" class="btn btn-primary btn-lg">
+                        <i class="bi bi-shield-lock me-2"></i> Secure Login
+                    </button>
                 </div>
             </div>
         </div>
     </div>
 
-    <!-- Firebase Scripts -->
+    <!-- Main Dashboard -->
+    <div id="dashboard-container" class="d-none">
+        <!-- Sidebar -->
+        <div class="sidebar">
+            <div class="sidebar-header">
+                <h3 class="text-gradient">Command Center</h3>
+                <button id="sidebar-toggle" class="btn btn-sm btn-dark">
+                    <i class="bi bi-list"></i>
+                </button>
+            </div>
+            <div class="sidebar-menu">
+                <ul class="nav flex-column">
+                    <li class="nav-item">
+                        <a class="nav-link active" data-page="overview">
+                            <i class="bi bi-grid-1x2"></i>
+                            <span>Dashboard</span>
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" data-page="clients">
+                            <i class="bi bi-pc-display"></i>
+                            <span>Clients</span>
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" data-page="search-terms">
+                            <i class="bi bi-search"></i>
+                            <span>Search Terms</span>
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" data-page="automation">
+                            <i class="bi bi-clock"></i>
+                            <span>Automation</span>
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" data-page="settings">
+                            <i class="bi bi-gear"></i>
+                            <span>Settings</span>
+                        </a>
+                    </li>
+                    <li class="nav-item mt-auto">
+                        <a class="nav-link" id="logout-btn">
+                            <i class="bi bi-box-arrow-right"></i>
+                            <span>Logout</span>
+                        </a>
+                    </li>
+                </ul>
+            </div>
+        </div>
+
+        <!-- Main Content -->
+        <div class="main-content">
+            <!-- Top Navbar -->
+            <nav class="navbar navbar-expand">
+                <div class="container-fluid">
+                    <div class="d-flex align-items-center">
+                        <button id="mobile-sidebar-toggle" class="btn btn-dark d-md-none me-2">
+                            <i class="bi bi-list"></i>
+                        </button>
+                        <h4 class="mb-0" id="page-title">Dashboard</h4>
+                    </div>
+                    <div class="d-flex align-items-center">
+                        <div class="dropdown me-3">
+                            <button class="btn btn-dark dropdown-toggle" type="button" id="notificationsDropdown" data-bs-toggle="dropdown" aria-expanded="false">
+                                <i class="bi bi-bell"></i>
+                                <span class="badge bg-danger">3</span>
+                            </button>
+                            <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="notificationsDropdown">
+                                <li><h6 class="dropdown-header">Notifications</h6></li>
+                                <li><a class="dropdown-item" href="#">New client connected</a></li>
+                                <li><a class="dropdown-item" href="#">Search quota reached</a></li>
+                                <li><a class="dropdown-item" href="#">System update available</a></li>
+                            </ul>
+                        </div>
+                        <div class="theme-toggle">
+                            <i class="bi bi-sun-fill light-icon"></i>
+                            <div class="form-check form-switch">
+                                <input class="form-check-input" type="checkbox" id="theme-switch" checked>
+                            </div>
+                            <i class="bi bi-moon-fill dark-icon"></i>
+                        </div>
+                    </div>
+                </div>
+            </nav>
+
+            <!-- Content Pages -->
+            <div class="content-wrapper">
+                <!-- Overview Page -->
+                <div class="content-page active" id="overview-page">
+                    <div class="row g-3 mb-4">
+                        <div class="col-md-3">
+                            <div class="stat-card">
+                                <div class="stat-card-body">
+                                    <div class="stat-card-icon bg-primary">
+                                        <i class="bi bi-pc-display"></i>
+                                    </div>
+                                    <div class="stat-card-info">
+                                        <h5 class="stat-card-title">Active Clients</h5>
+                                        <h2 class="stat-card-value" id="active-clients-count">0</h2>
+                                        <p class="stat-card-desc">Online now</p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="stat-card">
+                                <div class="stat-card-body">
+                                    <div class="stat-card-icon bg-success">
+                                        <i class="bi bi-search"></i>
+                                    </div>
+                                    <div class="stat-card-info">
+                                        <h5 class="stat-card-title">Total Searches</h5>
+                                        <h2 class="stat-card-value" id="total-searches-count">0</h2>
+                                        <p class="stat-card-desc">Today</p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="stat-card">
+                                <div class="stat-card-body">
+                                    <div class="stat-card-icon bg-info">
+                                        <i class="bi bi-list-ul"></i>
+                                    </div>
+                                    <div class="stat-card-info">
+                                        <h5 class="stat-card-title">Search Terms</h5>
+                                        <h2 class="stat-card-value" id="search-terms-count">0</h2>
+                                        <p class="stat-card-desc">Available</p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="stat-card">
+                                <div class="stat-card-body">
+                                    <div class="stat-card-icon bg-warning">
+                                        <i class="bi bi-clock"></i>
+                                    </div>
+                                    <div class="stat-card-info">
+                                        <h5 class="stat-card-title">Uptime</h5>
+                                        <h2 class="stat-card-value" id="uptime-value">0h</h2>
+                                        <p class="stat-card-desc">System online</p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="row g-3">
+                        <div class="col-md-8">
+                            <div class="content-card">
+                                <div class="content-card-header">
+                                    <h5>Search Activity</h5>
+                                    <div class="dropdown">
+                                        <button class="btn btn-sm btn-dark dropdown-toggle" type="button" id="timeRangeDropdown" data-bs-toggle="dropdown" aria-expanded="false">
+                                            Last 24 Hours
+                                        </button>
+                                        <ul class="dropdown-menu" aria-labelledby="timeRangeDropdown">
+                                            <li><a class="dropdown-item" href="#">Last 24 Hours</a></li>
+                                            <li><a class="dropdown-item" href="#">Last 7 Days</a></li>
+                                            <li><a class="dropdown-item" href="#">Last 30 Days</a></li>
+                                        </ul>
+                                    </div>
+                                </div>
+                                <div class="content-card-body">
+                                    <canvas id="activity-chart" height="250"></canvas>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="content-card">
+                                <div class="content-card-header">
+                                    <h5>Client Distribution</h5>
+                                </div>
+                                <div class="content-card-body">
+                                    <canvas id="device-chart" height="250"></canvas>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="row g-3 mt-3">
+                        <div class="col-md-6">
+                            <div class="content-card">
+                                <div class="content-card-header">
+                                    <h5>Recent Activity</h5>
+                                    <a href="#" class="btn btn-sm btn-dark">View All</a>
+                                </div>
+                                <div class="content-card-body p-0">
+                                    <div class="activity-list" id="recent-activity-list">
+                                        <div class="activity-item">
+                                            <div class="activity-icon bg-primary">
+                                                <i class="bi bi-person-plus"></i>
+                                            </div>
+                                            <div class="activity-details">
+                                                <h6>New client connected</h6>
+                                                <p>Client ID: client_abc123</p>
+                                                <small class="text-muted">5 minutes ago</small>
+                                            </div>
+                                        </div>
+                                        <div class="activity-item">
+                                            <div class="activity-icon bg-success">
+                                                <i class="bi bi-check-circle"></i>
+                                            </div>
+                                            <div class="activity-details">
+                                                <h6>Search session completed</h6>
+                                                <p>Client ID: client_xyz789</p>
+                                                <small class="text-muted">15 minutes ago</small>
+                                            </div>
+                                        </div>
+                                        <div class="activity-item">
+                                            <div class="activity-icon bg-warning">
+                                                <i class="bi bi-exclamation-triangle"></i>
+                                            </div>
+                                            <div class="activity-details">
+                                                <h6>CAPTCHA detected</h6>
+                                                <p>Client ID: client_def456</p>
+                                                <small class="text-muted">30 minutes ago</small>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="content-card">
+                                <div class="content-card-header">
+                                    <h5>Quick Actions</h5>
+                                </div>
+                                <div class="content-card-body">
+                                    <div class="row g-3">
+                                        <div class="col-6">
+                                            <button class="btn btn-primary w-100" id="pause-all-btn">
+                                                <i class="bi bi-pause-circle me-2"></i>Pause All Clients
+                                            </button>
+                                        </div>
+                                        <div class="col-6">
+                                            <button class="btn btn-success w-100" id="resume-all-btn">
+                                                <i class="bi bi-play-circle me-2"></i>Resume All Clients
+                                            </button>
+                                        </div>
+                                        <div class="col-6">
+                                            <button class="btn btn-warning w-100" id="reset-all-btn">
+                                                <i class="bi bi-arrow-repeat me-2"></i>Reset All Clients
+                                            </button>
+                                        </div>
+                                        <div class="col-6">
+                                            <button class="btn btn-info w-100" id="refresh-terms-btn">
+                                                <i class="bi bi-cloud-download me-2"></i>Refresh Terms
+                                            </button>
+                                        </div>
+                                        <div class="col-12 mt-3">
+                                            <div class="form-group">
+                                                <label for="global-max-searches" class="form-label">Global Max Searches</label>
+                                                <div class="input-group">
+                                                    <input type="number" class="form-control" id="global-max-searches" value="30">
+                                                    <button class="btn btn-dark" id="update-max-searches-btn">Update</button>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Clients Page -->
+                <div class="content-page" id="clients-page">
+                    <div class="content-card">
+                        <div class="content-card-header">
+                            <h5>Client Management</h5>
+                            <div class="d-flex">
+                                <div class="input-group me-2">
+                                    <input type="text" class="form-control" placeholder="Search clients..." id="client-search">
+                                    <button class="btn btn-dark" type="button">
+                                        <i class="bi bi-search"></i>
+                                    </button>
+                                </div>
+                                <div class="dropdown">
+                                    <button class="btn btn-dark dropdown-toggle" type="button" id="clientFilterDropdown" data-bs-toggle="dropdown" aria-expanded="false">
+                                        Filter
+                                    </button>
+                                    <ul class="dropdown-menu" aria-labelledby="clientFilterDropdown">
+                                        <li><a class="dropdown-item" href="#">All Clients</a></li>
+                                        <li><a class="dropdown-item" href="#">Active Only</a></li>
+                                        <li><a class="dropdown-item" href="#">Desktop Only</a></li>
+                                        <li><a class="dropdown-item" href="#">Mobile Only</a></li>
+                                        <li><a class="dropdown-item" href="#">Paused</a></li>
+                                    </ul>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="content-card-body p-0">
+                            <div class="table-responsive">
+                                <table class="table table-hover">
+                                    <thead>
+                                        <tr>
+                                            <th>Client ID</th>
+                                            <th>Status</th>
+                                            <th>Device</th>
+                                            <th>Searches</th>
+                                            <th>Last Active</th>
+                                            <th>Actions</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="clients-table-body">
+                                        <!-- Client rows will be added here dynamically -->
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Client Details Modal -->
+                    <div class="modal fade" id="clientDetailsModal" tabindex="-1" aria-hidden="true">
+                        <div class="modal-dialog modal-lg modal-dialog-centered">
+                            <div class="modal-content">
+                                <div class="modal-header">
+                                    <h5 class="modal-title">Client Details</h5>
+                                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                                </div>
+                                <div class="modal-body">
+                                    <div class="client-details-content">
+                                                                                <div class="row">
+                                            <div class="col-md-6">
+                                                <div class="mb-3">
+                                                    <label class="form-label">Client ID</label>
+                                                    <input type="text" class="form-control" id="detail-client-id" readonly>
+                                                </div>
+                                            </div>
+                                            <div class="col-md-6">
+                                                <div class="mb-3">
+                                                    <label class="form-label">Status</label>
+                                                    <input type="text" class="form-control" id="detail-status" readonly>
+                                                </div>
+                                            </div>
+                                            <div class="col-md-6">
+                                                <div class="mb-3">
+                                                    <label class="form-label">Device Type</label>
+                                                    <input type="text" class="form-control" id="detail-device" readonly>
+                                                </div>
+                                            </div>
+                                            <div class="col-md-6">
+                                                <div class="mb-3">
+                                                    <label class="form-label">Last Active</label>
+                                                    <input type="text" class="form-control" id="detail-last-active" readonly>
+                                                </div>
+                                            </div>
+                                            <div class="col-md-6">
+                                                <div class="mb-3">
+                                                    <label class="form-label">Current Searches</label>
+                                                    <input type="text" class="form-control" id="detail-searches" readonly>
+                                                </div>
+                                            </div>
+                                            <div class="col-md-6">
+                                                <div class="mb-3">
+                                                    <label class="form-label">Max Searches</label>
+                                                    <div class="input-group">
+                                                        <input type="number" class="form-control" id="detail-max-searches">
+                                                        <button class="btn btn-dark" id="detail-update-max">Update</button>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                            <div class="col-12">
+                                                <div class="mb-3">
+                                                    <label class="form-label">User Agent</label>
+                                                    <textarea class="form-control" id="detail-user-agent" rows="2" readonly></textarea>
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                        <div class="mt-3">
+                                            <h6>Client Controls</h6>
+                                            <div class="d-flex gap-2">
+                                                <button class="btn btn-warning" id="detail-pause-btn">
+                                                    <i class="bi bi-pause-circle me-2"></i>Pause
+                                                </button>
+                                                <button class="btn btn-success" id="detail-resume-btn">
+                                                    <i class="bi bi-play-circle me-2"></i>Resume
+                                                </button>
+                                                <button class="btn btn-danger" id="detail-reset-btn">
+                                                    <i class="bi bi-arrow-repeat me-2"></i>Reset
+                                                </button>
+                                                <button class="btn btn-dark" id="detail-disable-btn">
+                                                    <i class="bi bi-power me-2"></i>Disable
+                                                </button>
+                                            </div>
+                                        </div>
+
+                                        <div class="mt-4">
+                                            <h6>Search History</h6>
+                                            <div class="table-responsive">
+                                                <table class="table table-sm">
+                                                    <thead>
+                                                        <tr>
+                                                            <th>Time</th>
+                                                            <th>Search Term</th>
+                                                            <th>Status</th>
+                                                        </tr>
+                                                    </thead>
+                                                    <tbody id="detail-search-history">
+                                                        <!-- Search history will be added here -->
+                                                    </tbody>
+                                                </table>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="modal-footer">
+                                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Search Terms Page -->
+                <div class="content-page" id="search-terms-page">
+                    <div class="row g-3">
+                        <div class="col-md-8">
+                            <div class="content-card">
+                                <div class="content-card-header">
+                                    <h5>Search Terms</h5>
+                                    <div class="d-flex">
+                                        <div class="input-group me-2">
+                                            <input type="text" class="form-control" placeholder="Search terms..." id="term-search">
+                                            <button class="btn btn-dark" type="button">
+                                                <i class="bi bi-search"></i>
+                                            </button>
+                                        </div>
+                                        <div class="dropdown">
+                                            <button class="btn btn-dark dropdown-toggle" type="button" id="termFilterDropdown" data-bs-toggle="dropdown" aria-expanded="false">
+                                                Filter
+                                            </button>
+                                            <ul class="dropdown-menu" aria-labelledby="termFilterDropdown">
+                                                <li><a class="dropdown-item" href="#">All Terms</a></li>
+                                                <li><a class="dropdown-item" href="#">Most Used</a></li>
+                                                <li><a class="dropdown-item" href="#">Least Used</a></li>
+                                                <li><a class="dropdown-item" href="#">Recently Added</a></li>
+                                            </ul>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="content-card-body p-0">
+                                    <div class="table-responsive">
+                                        <table class="table table-hover">
+                                            <thead>
+                                                <tr>
+                                                    <th width="40">
+                                                        <div class="form-check">
+                                                            <input class="form-check-input" type="checkbox" id="select-all-terms">
+                                                        </div>
+                                                    </th>
+                                                    <th>Search Term</th>
+                                                    <th>Category</th>
+                                                    <th>Usage Count</th>
+                                                    <th>Actions</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody id="search-terms-table-body">
+                                                <!-- Search terms will be added here dynamically -->
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="content-card">
+                                <div class="content-card-header">
+                                    <h5>Add New Terms</h5>
+                                </div>
+                                <div class="content-card-body">
+                                    <div class="mb-3">
+                                        <label for="new-term" class="form-label">Search Term</label>
+                                        <input type="text" class="form-control" id="new-term" placeholder="Enter a search term">
+                                    </div>
+                                    <div class="mb-3">
+                                        <label for="term-category" class="form-label">Category</label>
+                                        <select class="form-select" id="term-category">
+                                            <option value="general">General</option>
+                                            <option value="technology">Technology</option>
+                                            <option value="entertainment">Entertainment</option>
+                                            <option value="health">Health</option>
+                                            <option value="sports">Sports</option>
+                                            <option value="news">News</option>
+                                        </select>
+                                    </div>
+                                    <div class="d-grid">
+                                        <button class="btn btn-primary" id="add-term-btn">
+                                            <i class="bi bi-plus-circle me-2"></i>Add Term
+                                        </button>
+                                    </div>
+
+                                    <hr>
+
+                                    <h6>Bulk Operations</h6>
+                                    <div class="mb-3">
+                                        <label for="bulk-terms" class="form-label">Multiple Terms (one per line)</label>
+                                        <textarea class="form-control" id="bulk-terms" rows="5" placeholder="Enter multiple search terms, one per line"></textarea>
+                                    </div>
+                                    <div class="mb-3">
+                                        <label for="bulk-category" class="form-label">Category for All</label>
+                                        <select class="form-select" id="bulk-category">
+                                            <option value="general">General</option>
+                                            <option value="technology">Technology</option>
+                                            <option value="entertainment">Entertainment</option>
+                                            <option value="health">Health</option>
+                                            <option value="sports">Sports</option>
+                                            <option value="news">News</option>
+                                        </select>
+                                    </div>
+                                    <div class="d-grid">
+                                        <button class="btn btn-primary" id="add-bulk-terms-btn">
+                                            <i class="bi bi-plus-circle me-2"></i>Add All Terms
+                                        </button>
+                                    </div>
+
+                                    <hr>
+
+                                    <div class="d-grid gap-2">
+                                        <button class="btn btn-outline-primary" id="import-terms-btn">
+                                            <i class="bi bi-upload me-2"></i>Import Terms
+                                        </button>
+                                        <button class="btn btn-outline-primary" id="export-terms-btn">
+                                            <i class="bi bi-download me-2"></i>Export Terms
+                                        </button>
+                                        <button class="btn btn-outline-danger" id="delete-selected-terms-btn">
+                                            <i class="bi bi-trash me-2"></i>Delete Selected
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Automation Page -->
+                <div class="content-page" id="automation-page">
+                    <div class="row g-3">
+                        <div class="col-md-6">
+                            <div class="content-card">
+                                <div class="content-card-header">
+                                    <h5>Schedule Manager</h5>
+                                </div>
+                                <div class="content-card-body">
+                                    <div class="mb-3">
+                                        <label class="form-label">Schedule Name</label>
+                                        <input type="text" class="form-control" id="schedule-name" placeholder="e.g., Daily Morning Searches">
+                                    </div>
+                                    <div class="row mb-3">
+                                        <div class="col-md-6">
+                                            <label class="form-label">Start Time</label>
+                                            <input type="time" class="form-control" id="schedule-start-time">
+                                        </div>
+                                        <div class="col-md-6">
+                                            <label class="form-label">End Time</label>
+                                            <input type="time" class="form-control" id="schedule-end-time">
+                                        </div>
+                                    </div>
+                                    <div class="mb-3">
+                                        <label class="form-label">Days of Week</label>
+                                        <div class="d-flex gap-2 flex-wrap">
+                                            <div class="form-check">
+                                                <input class="form-check-input" type="checkbox" id="day-mon">
+                                                <label class="form-check-label" for="day-mon">Mon</label>
+                                            </div>
+                                            <div class="form-check">
+                                                <input class="form-check-input" type="checkbox" id="day-tue">
+                                                <label class="form-check-label" for="day-tue">Tue</label>
+                                            </div>
+                                            <div class="form-check">
+                                                <input class="form-check-input" type="checkbox" id="day-wed">
+                                                <label class="form-check-label" for="day-wed">Wed</label>
+                                            </div>
+                                            <div class="form-check">
+                                                <input class="form-check-input" type="checkbox" id="day-thu">
+                                                <label class="form-check-label" for="day-thu">Thu</label>
+                                            </div>
+                                            <div class="form-check">
+                                                <input class="form-check-input" type="checkbox" id="day-fri">
+                                                <label class="form-check-label" for="day-fri">Fri</label>
+                                            </div>
+                                            <div class="form-check">
+                                                <input class="form-check-input" type="checkbox" id="day-sat">
+                                                <label class="form-check-label" for="day-sat">Sat</label>
+                                            </div>
+                                            <div class="form-check">
+                                                <input class="form-check-input" type="checkbox" id="day-sun">
+                                                <label class="form-check-label" for="day-sun">Sun</label>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="mb-3">
+                                        <label class="form-label">Client Filter</label>
+                                        <select class="form-select" id="schedule-client-filter">
+                                            <option value="all">All Clients</option>
+                                            <option value="desktop">Desktop Only</option>
+                                            <option value="mobile">Mobile Only</option>
+                                        </select>
+                                    </div>
+                                    <div class="mb-3">
+                                        <label class="form-label">Search Terms Category</label>
+                                        <select class="form-select" id="schedule-term-category">
+                                            <option value="all">All Categories</option>
+                                            <option value="technology">Technology</option>
+                                            <option value="entertainment">Entertainment</option>
+                                            <option value="health">Health</option>
+                                            <option value="sports">Sports</option>
+                                            <option value="news">News</option>
+                                        </select>
+                                    </div>
+                                    <div class="d-grid">
+                                        <button class="btn btn-primary" id="add-schedule-btn">
+                                            <i class="bi bi-plus-circle me-2"></i>Add Schedule
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="content-card">
+                                <div class="content-card-header">
+                                    <h5>Active Schedules</h5>
+                                </div>
+                                <div class="content-card-body p-0">
+                                    <div class="table-responsive">
+                                        <table class="table table-hover">
+                                            <thead>
+                                                <tr>
+                                                    <th>Name</th>
+                                                    <th>Schedule</th>
+                                                    <th>Status</th>
+                                                    <th>Actions</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody id="schedules-table-body">
+                                                <!-- Schedules will be added here dynamically -->
+                                                <tr>
+                                                    <td>Morning Searches</td>
+                                                    <td>8:00 AM - 10:00 AM (Mon-Fri)</td>
+                                                    <td><span class="badge bg-success">Active</span></td>
+                                                    <td>
+                                                        <button class="btn btn-sm btn-outline-dark">Edit</button>
+                                                        <button class="btn btn-sm btn-outline-danger">Delete</button>
+                                                    </td>
+                                                </tr>
+                                                <tr>
+                                                    <td>Evening Searches</td>
+                                                    <td>6:00 PM - 8:00 PM (Daily)</td>
+                                                    <td><span class="badge bg-success">Active</span></td>
+                                                    <td>
+                                                        <button class="btn btn-sm btn-outline-dark">Edit</button>
+                                                        <button class="btn btn-sm btn-outline-danger">Delete</button>
+                                                    </td>
+                                                </tr>
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="content-card mt-3">
+                                <div class="content-card-header">
+                                    <h5>Automation Settings</h5>
+                                </div>
+                                <div class="content-card-body">
+                                    <div class="mb-3">
+                                        <label class="form-label">Daily Search Quota</label>
+                                        <div class="input-group">
+                                            <input type="number" class="form-control" id="daily-search-quota" value="100">
+                                            <button class="btn btn-dark" id="update-quota-btn">Update</button>
+                                        </div>
+                                        <small class="text-muted">Maximum searches allowed per day across all clients</small>
+                                    </div>
+                                    <div class="mb-3">
+                                        <div class="form-check form-switch">
+                                            <input class="form-check-input" type="checkbox" id="auto-distribute" checked>
+                                            <label class="form-check-label" for="auto-distribute">Auto-distribute searches across clients</label>
+                                        </div>
+                                        <small class="text-muted">Automatically balance search load between available clients</small>
+                                    </div>
+                                    <div class="mb-3">
+                                        <div class="form-check form-switch">
+                                            <input class="form-check-input" type="checkbox" id="auto-rotate-terms" checked>
+                                            <label class="form-check-label" for="auto-rotate-terms">Auto-rotate search terms</label>
+                                        </div>
+                                        <small class="text-muted">Ensure all search terms are used evenly</small>
+                                    </div>
+                                    <div class="mb-3">
+                                        <div class="form-check form-switch">
+                                            <input class="form-check-input" type="checkbox" id="auto-pause-captcha" checked>
+                                            <label class="form-check-label" for="auto-pause-captcha">Auto-pause on CAPTCHA detection</label>
+                                        </div>
+                                        <small class="text-muted">Automatically pause clients when CAPTCHA is detected</small>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Settings Page -->
+                <div class="content-page" id="settings-page">
+                    <div class="row g-3">
+                        <div class="col-md-6">
+                            <div class="content-card">
+                                <div class="content-card-header">
+                                    <h5>General Settings</h5>
+                                </div>
+                                <div class="content-card-body">
+                                    <div class="mb-3">
+                                        <label for="admin-password" class="form-label">Admin Password</label>
+                                        <div class="input-group">
+                                            <input type="password" class="form-control" id="admin-password" placeholder="Enter new password">
+                                            <button class="btn btn-dark" id="update-password-btn">Update</button>
+                                        </div>
+                                    </div>
+                                    <div class="mb-3">
+                                        <label for="refresh-interval" class="form-label">Dashboard Refresh Interval</label>
+                                        <select class="form-select" id="refresh-interval">
+                                            <option value="5000">5 seconds</option>
+                                            <option value="10000" selected>10 seconds</option>
+                                            <option value="30000">30 seconds</option>
+                                            <option value="60000">1 minute</option>
+                                        </select>
+                                    </div>
+                                    <div class="mb-3">
+                                        <div class="form-check form-switch">
+                                            <input class="form-check-input" type="checkbox" id="enable-notifications" checked>
+                                            <label class="form-check-label" for="enable-notifications">Enable Notifications</label>
+                                        </div>
+                                    </div>
+                                    <div class="mb-3">
+                                        <div class="form-check form-switch">
+                                            <input class="form-check-input" type="checkbox" id="dark-mode-default" checked>
+                                            <label class="form-check-label" for="dark-mode-default">Use Dark Mode by Default</label>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="content-card mt-3">
+                                <div class="content-card-header">
+                                    <h5>Security Settings</h5>
+                                </div>
+                                <div class="content-card-body">
+                                    <div class="mb-3">
+                                        <div class="form-check form-switch">
+                                            <input class="form-check-input" type="checkbox" id="enable-ip-restriction">
+                                            <label class="form-check-label" for="enable-ip-restriction">Enable IP Restriction</label>
+                                        </div>
+                                    </div>
+                                    <div class="mb-3">
+                                        <label for="allowed-ips" class="form-label">Allowed IP Addresses</label>
+                                        <textarea class="form-control" id="allowed-ips" rows="3" placeholder="Enter IP addresses, one per line"></textarea>
+                                        <small class="text-muted">Leave empty to allow all IPs</small>
+                                    </div>
+                                    <div class="mb-3">
+                                        <div class="form-check form-switch">
+                                            <input class="form-check-input" type="checkbox" id="enable-session-timeout" checked>
+                                                                                        <label class="form-check-label" for="enable-session-timeout">Enable Session Timeout</label>
+                                        </div>
+                                    </div>
+                                    <div class="mb-3">
+                                        <label for="session-timeout" class="form-label">Session Timeout (minutes)</label>
+                                        <input type="number" class="form-control" id="session-timeout" value="30">
+                                    </div>
+                                    <div class="mb-3">
+                                        <div class="form-check form-switch">
+                                            <input class="form-check-input" type="checkbox" id="enable-activity-log" checked>
+                                            <label class="form-check-label" for="enable-activity-log">Enable Activity Logging</label>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="content-card">
+                                <div class="content-card-header">
+                                    <h5>Database Settings</h5>
+                                </div>
+                                <div class="content-card-body">
+                                    <div class="mb-3">
+                                        <label for="firebase-api-key" class="form-label">Firebase API Key</label>
+                                        <input type="text" class="form-control" id="firebase-api-key" placeholder="Enter Firebase API Key">
+                                    </div>
+                                    <div class="mb-3">
+                                        <label for="firebase-db-url" class="form-label">Firebase Database URL</label>
+                                        <input type="text" class="form-control" id="firebase-db-url" placeholder="Enter Firebase Database URL">
+                                    </div>
+                                    <div class="mb-3">
+                                        <label for="firebase-project-id" class="form-label">Firebase Project ID</label>
+                                        <input type="text" class="form-control" id="firebase-project-id" placeholder="Enter Firebase Project ID">
+                                    </div>
+                                    <div class="d-grid gap-2">
+                                        <button class="btn btn-primary" id="update-firebase-btn">Update Firebase Settings</button>
+                                        <button class="btn btn-outline-primary" id="test-connection-btn">Test Connection</button>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="content-card mt-3">
+                                <div class="content-card-header">
+                                    <h5>System Maintenance</h5>
+                                </div>
+                                <div class="content-card-body">
+                                    <div class="mb-3">
+                                        <button class="btn btn-outline-primary w-100" id="backup-data-btn">
+                                            <i class="bi bi-cloud-download me-2"></i>Backup All Data
+                                        </button>
+                                    </div>
+                                    <div class="mb-3">
+                                        <button class="btn btn-outline-primary w-100" id="restore-data-btn">
+                                            <i class="bi bi-cloud-upload me-2"></i>Restore From Backup
+                                        </button>
+                                    </div>
+                                    <div class="mb-3">
+                                        <button class="btn btn-outline-warning w-100" id="clear-logs-btn">
+                                            <i class="bi bi-trash me-2"></i>Clear Activity Logs
+                                        </button>
+                                    </div>
+                                    <div class="mb-3">
+                                        <button class="btn btn-outline-danger w-100" id="reset-system-btn">
+                                            <i class="bi bi-exclamation-triangle me-2"></i>Reset System
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- JavaScript Libraries -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    
+    <!-- Firebase -->
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
     
-    <!-- Our Script -->
+    <!-- Custom JavaScript -->
     <script src="script.js"></script>
 </body>
 </html>
