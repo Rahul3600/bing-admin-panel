@@ -1055,7 +1055,198 @@ function importSearchTerms() {
     input.click();
 }
 
-function exportSearchTerms() {
+      function exportSearchTerms() {
     if (!searchTerms || searchTerms.length === 0) {
         alert('No search terms to export');
         return;
+    }
+    
+    // Create a normalized version of the terms (all as objects)
+    const normalizedTerms = searchTerms.map(term => {
+        if (typeof term === 'string') {
+            return {
+                text: term,
+                category: 'General',
+                usageCount: 0
+            };
+        }
+        return term;
+    });
+    
+    // Create JSON data
+    const jsonData = JSON.stringify(normalizedTerms, null, 2);
+    const blob = new Blob([jsonData], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    
+    // Create download link
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `search_terms_${new Date().toISOString().split('T')[0]}.json`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+    
+    logActivity('terms_exported', 'Search Terms Exported', `${normalizedTerms.length} search terms were exported`);
+}
+
+// Client Details Modal
+function openClientDetailsModal(clientId) {
+    selectedClientId = clientId;
+    const client = clients[clientId];
+    if (!client) return;
+    
+    const status = client.status || {};
+    const commands = client.commands || {};
+    
+    // Fill in client details
+    document.getElementById('detail-client-id').value = clientId;
+    document.getElementById('detail-status').value = commands.disabled ? 'Disabled' : (status.status || 'Unknown');
+    document.getElementById('detail-device').value = status.mode || 'Unknown';
+    document.getElementById('detail-last-active').value = status.lastActive ? new Date(status.lastActive).toLocaleString() : 'Never';
+    document.getElementById('detail-searches').value = `${status.searchCount || 0} / ${status.maxSearches || '?'}`;
+    document.getElementById('detail-max-searches').value = status.maxSearches || 30;
+    document.getElementById('detail-user-agent').value = status.userAgent || 'Unknown';
+    
+    // Update button states
+    document.getElementById('detail-pause-btn').disabled = commands.disabled;
+    document.getElementById('detail-resume-btn').disabled = commands.disabled;
+    document.getElementById('detail-reset-btn').disabled = commands.disabled;
+    
+    const disableBtn = document.getElementById('detail-disable-btn');
+    disableBtn.textContent = commands.disabled ? 'Enable' : 'Disable';
+    disableBtn.classList.toggle('btn-success', commands.disabled);
+    disableBtn.classList.toggle('btn-dark', !commands.disabled);
+    
+    // Load search history
+    loadClientSearchHistory(clientId);
+    
+    // Show modal
+    const modal = new bootstrap.Modal(document.getElementById('clientDetailsModal'));
+    modal.show();
+}
+
+function loadClientSearchHistory(clientId) {
+    const historyTable = document.getElementById('detail-search-history');
+    historyTable.innerHTML = '<tr><td colspan="3" class="text-center">Loading search history...</td></tr>';
+    
+    database.ref(`clients/${clientId}/searchHistory`).orderByChild('timestamp').limitToLast(10).once('value')
+        .then(snapshot => {
+            const history = [];
+            snapshot.forEach(childSnapshot => {
+                history.push({
+                    id: childSnapshot.key,
+                    ...childSnapshot.val()
+                });
+            });
+            
+            if (history.length === 0) {
+                historyTable.innerHTML = '<tr><td colspan="3" class="text-center">No search history available</td></tr>';
+                return;
+            }
+            
+            historyTable.innerHTML = '';
+            history.reverse().forEach(item => {
+                const row = document.createElement('tr');
+                row.innerHTML = `
+                    <td>${new Date(item.timestamp).toLocaleString()}</td>
+                    <td>${item.term || 'Unknown'}</td>
+                    <td><span class="badge bg-${item.status === 'completed' ? 'success' : 'secondary'}">${item.status || 'Unknown'}</span></td>
+                `;
+                historyTable.appendChild(row);
+            });
+        })
+        .catch(error => {
+            console.error('Error loading client search history:', error);
+            historyTable.innerHTML = '<tr><td colspan="3" class="text-center">Error loading search history</td></tr>';
+        });
+}
+
+function updateClientMaxSearches() {
+    if (!selectedClientId) return;
+    
+    const maxSearches = parseInt(document.getElementById('detail-max-searches').value);
+    if (isNaN(maxSearches) || maxSearches < 1) {
+        alert('Please enter a valid number for max searches');
+        return;
+    }
+    
+    database.ref(`clients/${selectedClientId}/commands/maxSearches`).set(maxSearches)
+        .then(() => {
+            logActivity('client_max_searches', 'Client Max Searches Updated', `Max searches for client ${selectedClientId} set to ${maxSearches}`);
+            alert('Max searches updated successfully');
+        })
+        .catch(error => {
+            console.error('Error updating max searches:', error);
+            alert('Failed to update max searches. Please try again.');
+        });
+}
+
+function pauseSelectedClient() {
+    if (!selectedClientId) return;
+    pauseClient(selectedClientId);
+}
+
+function resumeSelectedClient() {
+    if (!selectedClientId) return;
+    resumeClient(selectedClientId);
+}
+
+function resetSelectedClient() {
+    if (!selectedClientId) return;
+    resetClient(selectedClientId);
+}
+
+function toggleDisableClient() {
+    if (!selectedClientId) return;
+    toggleClientDisabled(selectedClientId);
+    
+    // Close modal
+    const modal = bootstrap.Modal.getInstance(document.getElementById('clientDetailsModal'));
+    modal.hide();
+}
+
+// Utility Functions
+function getTimeAgo(date) {
+    const seconds = Math.floor((new Date() - date) / 1000);
+    
+    let interval = Math.floor(seconds / 31536000);
+    if (interval > 1) return interval + ' years ago';
+    
+    interval = Math.floor(seconds / 2592000);
+    if (interval > 1) return interval + ' months ago';
+    
+    interval = Math.floor(seconds / 86400);
+    if (interval > 1) return interval + ' days ago';
+    
+    interval = Math.floor(seconds / 3600);
+    if (interval > 1) return interval + ' hours ago';
+    
+    interval = Math.floor(seconds / 60);
+    if (interval > 1) return interval + ' minutes ago';
+    
+    return Math.floor(seconds) + ' seconds ago';
+}
+
+function logActivity(type, title, description) {
+    const activity = {
+        type,
+        title,
+        description,
+        timestamp: Date.now()
+    };
+    
+    database.ref('activityLog').push(activity)
+        .catch(error => {
+            console.error('Error logging activity:', error);
+        });
+}
+
+// Initialize theme based on saved preference
+if (localStorage.getItem('darkMode') === 'true' || localStorage.getItem('darkMode') === null) {
+    document.body.classList.add('dark-theme');
+    document.getElementById('theme-switch').checked = true;
+} else {
+    document.body.classList.remove('dark-theme');
+    document.getElementById('theme-switch').checked = false;
+}
