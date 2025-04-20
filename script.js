@@ -512,12 +512,6 @@ function updateDashboardStats() {
     
     document.getElementById('active-clients-count').textContent = activeClients;
     
-    // Count total searches today
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
-    
-    let totalSearches = 0;
-    Object.values(clients)
       // Count total searches today
     const today = new Date();
     today.setHours(0, 0, 0, 0);
